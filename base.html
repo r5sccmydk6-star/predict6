@@ -1,0 +1,253 @@
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")   # non-GUI backend for server
+import matplotlib.pyplot as plt
+import io, base64, sqlite3, logging, traceback, os
+from werkzeug.security import generate_password_hash, check_password_hash
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+import plotly.graph_objs as go
+
+# ---------------- App setup ----------------
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET", "supersecretkey123")  # set env var in production
+logging.basicConfig(filename="error.log", level=logging.INFO)
+
+DB_PATH = "users.db"
+
+# ---------------- DB init ----------------
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            last_ticker TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# ---------------- Utilities ----------------
+def compute_rsi(series, period=14):
+    delta = series.diff()
+    gain = delta.clip(lower=0).rolling(window=period).mean()
+    loss = (-delta.clip(upper=0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def safe_download(ticker, period="5y", interval="1d"):
+    try:
+        data = yf.download(ticker, period=period, interval=interval, progress=False, threads=False)
+        if data is None or data.empty:
+            data = yf.download(ticker + ".NS", period=period, interval=interval, progress=False, threads=False)
+        if data is None:
+            return pd.DataFrame()
+        return data.dropna()
+    except Exception as e:
+        logging.error(f"download error {ticker}: {e}")
+        return pd.DataFrame()
+
+def create_matplotlib_image(dates, actual, predicted, title):
+    plt.figure(figsize=(10,4.5))
+    plt.plot(dates, actual, label="Actual", linewidth=2)
+    plt.plot(dates[:len(predicted)], predicted, label="Predicted", linewidth=2, linestyle="--")
+    plt.title(title, fontsize=14)
+    plt.xlabel("Date")
+    plt.ylabel("Price")
+    plt.legend()
+    plt.grid(alpha=0.2)
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=100)
+    plt.close()
+    buf.seek(0)
+    img_b64 = base64.b64encode(buf.read()).decode("ascii")
+    return img_b64
+
+def create_plotly_html(dates_actual, actual, dates_pred, predicted, title):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=dates_actual, y=actual, mode="lines", name="Actual", line=dict(width=2)))
+    fig.add_trace(go.Scatter(x=dates_pred, y=predicted, mode="lines+markers", name="Predicted", line=dict(width=2, dash="dash")))
+    fig.update_layout(title=title, xaxis_title="Date", yaxis_title="Price", template="plotly_white", legend=dict(x=0.02, y=0.98))
+    return fig.to_html(full_html=False, include_plotlyjs="cdn")
+
+# ---------------- Authentication Routes ----------------
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        if not username or not password:
+            flash("Please provide username and password", "warning")
+            return redirect(url_for("register"))
+        hashed = generate_password_hash(password)
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed))
+            conn.commit()
+            conn.close()
+            flash("Registration successful — please login", "success")
+            return redirect(url_for("login"))
+        except sqlite3.IntegrityError:
+            flash("Username already exists", "danger")
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            flash("An error occurred during registration", "danger")
+    return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT password FROM users WHERE username=?", (username,))
+        row = c.fetchone()
+        conn.close()
+        if row and check_password_hash(row[0], password):
+            session["user"] = username
+            flash("Logged in successfully", "success")
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Invalid username or password", "danger")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    flash("Logged out", "info")
+    return redirect(url_for("login"))
+
+# ---------------- Dashboard ----------------
+@app.route("/", methods=["GET", "POST"])
+@app.route("/dashboard", methods=["GET", "POST"])
+def dashboard():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    ticker = request.values.get("ticker", "").strip().upper()
+    algo = request.values.get("algo", "Linear Regression")
+    use_plotly = request.values.get("use_plotly", "true") == "true"
+    result = None
+
+    if ticker:
+        try:
+            data = safe_download(ticker)
+            if data.empty or len(data) < 60:
+                flash("No sufficient data found for this ticker. Try AAPL, MSFT or RELIANCE.NS", "warning")
+                return render_template("dashboard.html", result=None)
+
+            # indicators
+            data["RSI"] = compute_rsi(data["Close"])
+            data["MA20"] = data["Close"].rolling(20).mean()
+            data["EMA20"] = data["Close"].ewm(span=20, adjust=False).mean()
+            data.dropna(inplace=True)
+
+            # features and training
+            X = data[["Open", "High", "Low", "Volume", "RSI", "MA20", "EMA20"]]
+            y = data["Close"]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
+
+            # choose model
+            if algo == "Linear Regression":
+                model = LinearRegression()
+            elif algo == "Decision Tree":
+                model = DecisionTreeRegressor(random_state=42)
+            else:
+                model = RandomForestRegressor(n_estimators=100, random_state=42)
+
+            model.fit(X_train, y_train)
+            pred_test = model.predict(X_test)
+
+            # next day (use last row)
+            next_day_pred = float(model.predict(X.iloc[-1:].values)[0])
+            current_price = float(y.iloc[-1])
+            profit_loss = next_day_pred - current_price
+            advice = "Buy (uptrend expected)" if profit_loss > 0 else "Avoid / Sell (downtrend expected)"
+            advice_class = "success" if profit_loss > 0 else "danger"
+
+            # metrics
+            pct_change = ((current_price - data["Close"].iloc[-2]) / data["Close"].iloc[-2]) * 100
+            week52_high = data["Close"].max()
+            week52_low = data["Close"].min()
+            volatility_pct = np.std(data["Close"].pct_change().dropna()) * 100
+
+            # company info (limited)
+            info = yf.Ticker(ticker).info
+            company_name = info.get("longName", ticker)
+            company_summary = info.get("longBusinessSummary", "No summary available.")
+            industry = info.get("industry", "N/A")
+
+            # Plot data for charts (limit to last 200 for clarity)
+            last_n = 200
+            data_slice = data.tail(last_n)
+            dates_actual = data_slice.index
+            actual_vals = data_slice["Close"].values
+
+            # predicted: align with test set for plot clarity
+            # get test slice indices
+            test_start_idx = len(X_train)
+            dates_pred = data.index[test_start_idx:test_start_idx+len(pred_test)]
+            pred_vals = pred_test
+
+            # create Matplotlib static image
+            title = f"{ticker} - Actual vs Predicted ({algo})"
+            img_b64 = create_matplotlib_image(dates_actual, actual_vals, pred_vals, title)
+
+            # create Plotly HTML snippet
+            plotly_html = create_plotly_html(dates_actual, actual_vals, dates_pred, pred_vals, title)
+
+            # Save last ticker in DB
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("UPDATE users SET last_ticker=? WHERE username=?", (ticker, session["user"]))
+            conn.commit()
+            conn.close()
+
+            result = {
+                "ticker": ticker,
+                "company": company_name,
+                "industry": industry,
+                "summary": company_summary,
+                "current": round(current_price, 2),
+                "predicted": round(next_day_pred, 2),
+                "profit_loss": round(profit_loss, 2),
+                "advice": advice,
+                "advice_class": advice_class,
+                "pct_change": round(pct_change, 2),
+                "week52_high": round(week52_high, 2),
+                "week52_low": round(week52_low, 2),
+                "volatility": round(volatility_pct, 2),
+                "matplotlib_img": img_b64,
+                "plotly_html": Markup(plotly_html)
+            }
+
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            flash("Error processing ticker: " + str(e), "danger")
+
+    # prepare last_ticker display
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT last_ticker FROM users WHERE username=?", (session["user"],))
+    row = c.fetchone()
+    last_ticker = row[0] if row and row[0] else ""
+    conn.close()
+
+    return render_template("dashboard.html", result=result, last_ticker=last_ticker, user=session["user"])
+
+# ---------------- Run ----------------
+if __name__ == "__main__":
+    app.run(debug=True)

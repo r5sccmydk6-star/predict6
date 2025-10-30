@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Stock Prediction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css">
+    <style>
+        body { background-color: #f5f5f5; }
+        .box { padding: 2rem; border-radius: 12px; }
+        .button.is-primary { width: 100%; }
+    </style>
+</head>
+<body>
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-5-tablet is-4-desktop">
+                <div class="box has-shadow">
+                    <h1 class="title is-3 has-text-centered mb-5">Sign Up</h1>
+
+                    {% if error %}
+                        <div class="notification is-danger is-light">{{ error }}</div>
+                    {% endif %}
+
+                    <form action="/signup" method="post">
+                        <div class="field">
+                            <label class="label">Username</label>
+                            <div class="control">
+                                <input class="input is-rounded" type="text" name="username" placeholder="Enter username" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Password</label>
+                            <div class="control">
+                                <input class="input is-rounded" type="password" name="password" placeholder="Enter password" required>
+                            </div>
+                        </div>
+
+                        <div class="field mt-4">
+                            <div class="control">
+                                <button class="button is-primary is-rounded is-medium" type="submit">Sign Up</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <p class="has-text-centered mt-4">
+                        Already have an account? <a href="/login">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

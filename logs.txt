@@ -1,0 +1,39 @@
+2025-10-30 10:09:32,551 - INFO - Starting Flask app. Visit http://127.0.0.1:5000/
+2025-10-30 10:09:32,552 - INFO - If there's an error, open http://127.0.0.1:5000/logs to view recent log output.
+2025-10-30 10:09:32,576 - WARNING -  * Debugger is active!
+2025-10-30 10:09:32,586 - INFO -  * Debugger PIN: 291-122-118
+2025-10-30 10:09:38,069 - INFO - Starting Flask app. Visit http://127.0.0.1:5000/
+2025-10-30 10:09:38,069 - INFO - If there's an error, open http://127.0.0.1:5000/logs to view recent log output.
+2025-10-30 10:09:38,096 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-30 10:09:38,096 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-30 10:09:38,096 - INFO -  * Restarting with stat
+2025-10-30 10:09:39,664 - INFO - Starting Flask app. Visit http://127.0.0.1:5000/
+2025-10-30 10:09:39,664 - INFO - If there's an error, open http://127.0.0.1:5000/logs to view recent log output.
+2025-10-30 10:09:39,683 - WARNING -  * Debugger is active!
+2025-10-30 10:09:39,693 - INFO -  * Debugger PIN: 291-122-118
+2025-10-30 10:09:43,017 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:43] "GET / HTTP/1.1" 200 -
+2025-10-30 10:09:43,024 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:43] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+2025-10-30 10:09:47,319 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:47] "GET /?ticker=AAPL HTTP/1.1" 200 -
+2025-10-30 10:09:47,326 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:47] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+2025-10-30 10:09:55,687 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:55] "GET /?ticker=AAPL HTTP/1.1" 200 -
+2025-10-30 10:09:55,693 - INFO - 127.0.0.1 - - [30/Oct/2025 10:09:55] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+2025-10-30 12:18:17,401 - INFO - Starting Flask app. Visit http://127.0.0.1:5000/
+2025-10-30 12:18:17,401 - INFO - If there's an error, open http://127.0.0.1:5000/logs to view recent log output.
+2025-10-30 12:18:17,420 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-30 12:18:17,420 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-30 12:18:17,420 - INFO -  * Restarting with stat
+2025-10-30 12:18:18,214 - INFO - Starting Flask app. Visit http://127.0.0.1:5000/
+2025-10-30 12:18:18,214 - INFO - If there's an error, open http://127.0.0.1:5000/logs to view recent log output.
+2025-10-30 12:18:18,224 - WARNING -  * Debugger is active!
+2025-10-30 12:18:18,229 - INFO -  * Debugger PIN: 291-122-118
+2025-10-30 12:18:20,714 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:20] "GET / HTTP/1.1" 200 -
+2025-10-30 12:18:21,560 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:21] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+2025-10-30 12:18:21,667 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:21] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+2025-10-30 12:18:21,668 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:21] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+2025-10-30 12:18:21,669 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:21] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-10-30 12:18:27,114 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:27] "GET /?ticker=AAPL HTTP/1.1" 200 -
+2025-10-30 12:18:27,388 - INFO - 127.0.0.1 - - [30/Oct/2025 12:18:27] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+2025-10-30 12:18:53,170 - INFO -  * Detected change in '/Users/goutaminaik/PycharmProjects/PythonProject/app.py', reloading
+2025-10-30 12:18:53,255 - INFO -  * Restarting with stat

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stock Predictor Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .container {
+    max-width: 1000px;
+    width: 95%;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+    padding: 40px 50px;
+    margin: 30px auto;
+  }
+
+  h1 {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 25px;
+    font-size: 2.2rem;
+    color: #f8f9fa;
+  }
+
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+
+  input[type="text"], select {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    min-width: 250px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  select option {
+    background: #2c5364;
+    color: #fff;
+  }
+
+  input[type="submit"] {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  input[type="submit"]:hover {
+    background: linear-gradient(90deg, #0072ff, #00c6ff);
+    transform: scale(1.05);
+  }
+
+  .error {
+    text-align: center;
+    color: #ff6b6b;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  img {
+    display: block;
+    margin: 30px auto;
+    border-radius: 16px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+    max-width: 90%;
+  }
+
+  .card-box {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px auto;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .summary, .conclusion {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+  }
+
+  .warning {
+    color: #ffcc00;
+    font-weight: bold;
+  }
+
+  .advice-box {
+    width: 300px;
+    margin: 25px auto;
+    padding: 15px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: 0.3s;
+  }
+
+  .advice-box:hover {
+    transform: scale(1.05);
+  }
+
+  .safe {
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+  }
+
+  .risky {
+    background: linear-gradient(90deg, #ff5252, #d32f2f);
+  }
+
+  table {
+    margin: 30px auto;
+    width: 90%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: 12px;
+    text-align: center;
+  }
+
+  th {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 25px;
+    color: rgba(255,255,255,0.7);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📈 Stock Predictor Dashboard</h1>
+
+  <form method="get">
+    <input type="text" name="ticker" placeholder="Enter Symbol e.g. AAPL, RELIANCE" required>
+    <select name="algo">
+      <option value="Linear Regression" {% if algo=='Linear Regression' %}selected{% endif %}>Linear Regression</option>
+      <option value="Decision Tree" {% if algo=='Decision Tree' %}selected{% endif %}>Decision Tree</option>
+      <option value="Random Forest" {% if algo=='Random Forest' %}selected{% endif %}>Random Forest</option>
+    </select>
+    <input type="submit" value="Predict">
+  </form>
+
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+
+  {% if plot_url %}
+    <img src="data:image/png;base64,{{ plot_url }}">
+    <div class="card-box">
+      <div class="conclusion">{{ conclusion }}</div>
+      {% if warning %}
+        <div class="warning">{{ warning }}</div>
+      {% endif %}
+    </div>
+
+    <div class="advice-box {{ advice_class }}">{{ advice_text }}</div>
+
+    <div class="card-box summary">{{ summary }}</div>
+
+    <table>
+      <tr><th>Actual ($)</th><th>Predicted ($)</th></tr>
+      {% for a, p in table_data %}
+      <tr>
+        <td>{{ "%.2f"|format(a) }}</td>
+        <td>{{ "%.2f"|format(p) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  <footer>© 2025 FinPredict AI | Powered by Flask & Bootstrap</footer>
+</div>
+
+</body>
+</html>

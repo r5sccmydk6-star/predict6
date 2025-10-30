@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Stocks - Stock Prediction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { background-color: #f5f5f5; }
+        .box { padding: 2rem; border-radius: 12px; }
+        .navbar { background-color: #00d1b2; color: white; }
+        .navbar .title { color: white; }
+        #plots { margin-top: 2rem; }
+    </style>
+</head>
+<body>
+<section class="section">
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar mb-6">
+            <div class="navbar-brand">
+                <h1 class="title is-3">Stock Prediction</h1>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    Logged in as <strong>{{ username }}</strong>
+                    <a href="/logout" class="button is-light ml-3">Logout</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Prediction Form -->
+        <div class="box has-shadow">
+            <h2 class="title is-4 has-text-centered mb-4">Enter Stock Details</h2>
+
+            {% if error %}
+                <div class="notification is-danger is-light">{{ error }}</div>
+            {% endif %}
+
+            <form action="/predict" method="post">
+                <div class="field">
+                    <label class="label">Stock Symbol(s)</label>
+                    <div class="control">
+                        <input class="input is-rounded" type="text" name="stocks" placeholder="e.g., AAPL, MSFT" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Period</label>
+                    <div class="control">
+                        <input class="input is-rounded" type="text" name="period" placeholder="e.g., 1mo, 3mo, 1y" required>
+                    </div>
+                </div>
+
+                <div class="field mt-4">
+                    <div class="control">
+                        <button class="button is-primary is-rounded is-medium" type="submit">Predict</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        {% if results %}
+        <div id="plots" class="columns is-multiline mt-6">
+            {% for r in results %}
+            <div class="column is-12">
+                <div class="box has-shadow">
+                    <h3 class="title is-5">{{ r.stock }}</h3>
+                    {% if r.error %}
+                        <div class="notification is-danger is-light">{{ r.error }}</div>
+                    {% else %}
+                        <p>Last Close: <strong>{{ r.last_close }}</strong></p>
+                        <p>Predicted Next Close: <strong>{{ r.predicted }}</strong></p>
+                        <div>{{ r.chart | safe }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+</body>
+</html>
